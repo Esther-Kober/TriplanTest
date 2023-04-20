@@ -1,6 +1,7 @@
 import { Component, ViewChild, ElementRef } from '@angular/core';
 import { CitiesService } from '../../Services/Map/cities.service';
 import { City } from '../../City';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-display-citiest-on-map',
@@ -9,6 +10,7 @@ import { City } from '../../City';
 })
 
 export class DisplayCitiestOnMapComponent {
+  
   @ViewChild
     ('mapContainer', { static: false }) gmap: ElementRef;
   map!: google.maps.Map;
@@ -17,35 +19,25 @@ export class DisplayCitiestOnMapComponent {
     zoom: 2
   };
 
-  cities: City[] = [];
-  
-  constructor(private CitiesService: CitiesService) {}
+  cities: City[];
+
+  constructor(private CitiesService: CitiesService) { }
 
   ngOnInit() {
-    this.getCities()
-    setTimeout(() => {
-      this.loadAllMarkers()
-    }, 2000);
+    this.getCities().subscribe(e => {
+      if (e) {
+        this.cities = e;
+      }
+      this.loadAllMarkers();
+    });
   }
 
-  getCities(): void {
-    this.CitiesService
-      .getAll()
-      .subscribe(
-        (data: City[]) => {
-          this.cities = data
-          console.log('Operation success')
-        },
-        (err) => {
-          console.log(err)
-        }
-      );
+  getCities(): Observable<City[]> {
+    return this.CitiesService.getAll();
   }
 
   loadAllMarkers(): void {
-    this.getCities();
     this.map = new google.maps.Map(this.gmap.nativeElement, this.mapOptions);
-    console.log('cities', this.cities)
     this.cities.forEach(c => {
       console.log(c.bounds.northeast.lat, c.bounds.northeast.lng)
       this.mapInitializer(c.bounds.northeast.lat, c.bounds.northeast.lng, c.place.city)
